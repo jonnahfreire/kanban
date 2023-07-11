@@ -1,5 +1,29 @@
 import 'package:flutter/material.dart';
 
+class KanbanColumn {
+  String id;
+  String header;
+  List<Widget> items;
+
+  KanbanColumn({
+    required this.id,
+    required this.header,
+    required this.items,
+  });
+}
+
+Draggable<String> _kanbanItem({
+  required String columnId,
+  Widget? itemFeedback,
+  required Widget child,
+}) {
+  return Draggable<String>(
+    data: columnId,
+    feedback: itemFeedback ?? child,
+    child: child,
+  );
+}
+
 class Kanban extends StatefulWidget {
   const Kanban({super.key});
 
@@ -8,48 +32,108 @@ class Kanban extends StatefulWidget {
 }
 
 class _KanbanState extends State<Kanban> {
+  final List<KanbanColumn> data = [
+    KanbanColumn(
+      id: "requested",
+      header: "Solicitado",
+      items: [
+        _kanbanItem(columnId: "requested", child: const Text("hehe")),
+        _kanbanItem(columnId: "requested", child: const Text("hihi")),
+      ],
+    ),
+    KanbanColumn(
+      id: "approved",
+      header: "Aprovado",
+      items: [
+        _kanbanItem(columnId: "approved", child: const Text("haha")),
+        _kanbanItem(columnId: "approved", child: const Text("hoho")),
+      ],
+    ),
+    KanbanColumn(
+      id: "rejected",
+      header: "Rejeitado",
+      items: [],
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.topLeft,
       width: double.infinity,
       height: double.infinity,
-      color: Colors.blue.shade100,
       child: Row(
         children: [
-          _kanbanListItems(
-              header: "Solicitado", items: List.of([Text("Blabla")])),
-          _kanbanListItems(header: "Rejeitado"),
-          _kanbanListItems(header: "Aprovado"),
+          ...data.map((kanbanColumn) {
+            return SizedBox(
+              width: 200,
+              child: Column(
+                children: [
+                  _kanbanHeader(title: kanbanColumn.header),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Container(
+                      width: double.infinity,
+                      height: 500,
+                      color: Colors.black12.withOpacity(.05),
+                      child: _kanbanItems(
+                        items: kanbanColumn.items,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            );
+          })
         ],
       ),
     );
   }
 
-  Container _kanbanListItems({
-    required String header,
+  Widget _kanbanHeader({
+    required String title,
+    Color? color = Colors.white,
+    Color? shadowColor,
+    Color? surfaceTintColor,
+    double? elevation,
+    ShapeBorder? shape,
+    double height = 50,
+    Widget? content,
+  }) =>
+      Card(
+        color: color,
+        surfaceTintColor: surfaceTintColor ?? Colors.white,
+        shadowColor: shadowColor ?? Colors.black54,
+        shape: shape,
+        elevation: elevation ?? 2,
+        child: Container(
+          height: height,
+          padding: const EdgeInsets.all(10),
+          child: content ?? Center(child: Text(title)),
+        ),
+      );
+
+  Widget _kanbanItems({
     List<Widget>? items,
   }) {
-    return Container(
-      // height: 50,
-      decoration: BoxDecoration(color: Colors.blueAccent),
-      child: Column(
-        children: [
-          Container(
-            color: Colors.red,
-            child: Text(header),
-          ),
-          ListView.builder(
-            itemCount: items != null ? items.length : 0,
-            itemBuilder: (
-              BuildContext context,
-              int index,
-            ) {
-              return items![index];
-            },
-          )
-        ],
-      ),
+    return DragTarget<String>(
+      builder: (
+        BuildContext context,
+        List<dynamic> accepted,
+        List<dynamic> rejected,
+      ) {
+        if (accepted.isEmpty) return Column(children: [...items!]);
+        return Column(children: [...accepted.map((e) => Text(e))]);
+      },
+      onWillAccept: (data) {
+        return data != null;
+      },
+      onAccept: (data) {},
     );
   }
 }
